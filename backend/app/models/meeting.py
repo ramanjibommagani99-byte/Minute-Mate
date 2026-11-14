@@ -29,3 +29,5 @@ class Meeting(TimestampMixin, Base):
     participants: Mapped[list["Participant"]] = relationship(back_populates="meeting", cascade="all, delete-orphan")
     tasks: Mapped[list["Task"]] = relationship(back_populates="meeting", cascade="all, delete-orphan")
     decisions: Mapped[list["Decision"]] = relationship(back_populates="meeting", cascade="all, delete-orphan")
+    risks: Mapped[list["MeetingRisk"]] = relationship(back_populates="meeting", cascade="all, delete-orphan")
+    open_questions: Mapped[list["OpenQuestion"]] = relationship(back_populates="meeting", cascade="all, delete-orphan")

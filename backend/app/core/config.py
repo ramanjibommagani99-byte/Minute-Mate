@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60
     openai_api_key: str = ""
     transcription_model: str = "gpt-transcribe"
+    extraction_model: str = "gpt-6-astra"
     frontend_origin: str = "http://localhost:3000"
     cookie_secure: bool = False
     cookie_name: str = "minutemate_access_token"

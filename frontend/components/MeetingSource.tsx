@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api-client";
+import ExtractMeetingButton from "@/components/ExtractMeetingButton";
 
 type Meeting = { id: string; title: string; meeting_date: string | null; source_type: "transcript" | "notes" | "audio"; source_text: string; created_at: string };
 
@@ -23,6 +24,7 @@ export default function MeetingSource({ id }: { id: string }) {
     <p className="eyebrow">Saved {meeting.source_type}</p>
     <h1>{meeting.title}</h1>
     <p className="form-note">{meeting.meeting_date ? new Date(meeting.meeting_date).toLocaleString() : `Added ${new Date(meeting.created_at).toLocaleDateString()}`}</p>
+    <ExtractMeetingButton meetingId={meeting.id} />
     <article className="source-card"><h2>Original source</h2><pre className="source-text">{meeting.source_text}</pre></article>
   </main>;
 }

@@ -25,6 +25,7 @@ class Task(TimestampMixin, Base):
     owner_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"))
     title: Mapped[str] = mapped_column(String(250), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
+    assignee_name: Mapped[str | None] = mapped_column(String(120))
     due_date: Mapped[date | None] = mapped_column(Date)
     due_date_original: Mapped[str | None] = mapped_column(String(120))
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="not_started", server_default="not_started")
