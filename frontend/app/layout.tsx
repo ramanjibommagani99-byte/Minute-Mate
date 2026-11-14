@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import AuthNav from "@/components/AuthNav";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <nav className="nav" aria-label="Main navigation">
               <Link href="/meetings/new">New meeting</Link>
               <Link href="/dashboard">Dashboard</Link>
+              <AuthNav />
             </nav>
           </header>
           {children}

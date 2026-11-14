@@ -1,1 +1,1 @@
--- Core MinuteMate schema will be introduced with the database model phase.
+-- The authoritative schema is maintained by Alembic migrations in backend/alembic/versions.

@@ -39,4 +39,15 @@ h1 { max-width: 740px; margin: 12px 0; font-size: clamp(2.2rem, 5vw, 4.25rem); l
 .card h2 { margin: 0 0 8px; font-size: 1.05rem; }
 .card p { margin: 0; color: var(--muted); line-height: 1.55; }
 .placeholder { padding: 26px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--muted); }
+.auth-card { width: min(480px, 100%); margin: 30px auto; padding: 30px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.auth-form { display: grid; gap: 16px; margin-top: 24px; }
+.field { display: grid; gap: 7px; color: var(--ink); font-size: 0.92rem; font-weight: 650; }
+.field input { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #bccbc1; border-radius: 7px; background: white; color: var(--ink); font: inherit; }
+.field input:focus { outline: 3px solid #bce1ce; border-color: var(--green); }
+.form-note { margin: 0; color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
+.form-error { margin: 0; color: #a32222; font-size: 0.92rem; }
+.form-success { margin: 0; color: var(--green); font-size: 0.92rem; }
+.auth-link { color: var(--green); font-weight: 650; text-decoration: underline; text-underline-offset: 3px; }
+.nav-button { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.nav-button:hover { color: var(--green); }
 @media (max-width: 640px) { .topbar { align-items: flex-start; flex-direction: column; } .nav { gap: 14px; } .main { margin-top: 36px; } }

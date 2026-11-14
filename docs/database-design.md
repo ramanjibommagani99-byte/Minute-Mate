@@ -1,5 +1,5 @@
 # Database design
 
-The MVP will use PostgreSQL. The planned core tables are users, meetings, participants, tasks, task_evidence, decisions, integrations, task_sync_events, and audit_logs. SQLAlchemy models and Alembic migrations will be introduced with the database and workflow phases.
+The MVP uses PostgreSQL with SQLAlchemy models and Alembic migrations. The core schema contains users, meetings, participants, tasks, task_evidence, decisions, integrations, task_sync_events, and audit_logs. Relationships and delete behavior are enforced with foreign keys; task states, confidence ranges, and provider values are constrained in the database.
 
-The local Compose service currently creates an empty `minutemate` database. Do not store real personal meeting data in demo fixtures.
+The local Compose service creates the `minutemate` database. Apply the schema from the backend folder with `alembic upgrade head`. Do not store real personal meeting data in demo fixtures.

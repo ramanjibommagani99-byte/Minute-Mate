@@ -15,7 +15,7 @@ The first release proves one workflow: enter a meeting transcript or notes, extr
 
 ## Run locally on Windows
 
-1. Copy `.env.example` to `backend/.env` and set `JWT_SECRET` and `OPENAI_API_KEY` when those features are added. The foundation does not call the AI API yet.
+1. Copy `.env.example` to `backend/.env`. Use a random secret of at least 32 characters for `JWT_SECRET`; set `COOKIE_SECURE=true` when serving over HTTPS. `OPENAI_API_KEY` is only needed when AI extraction is added.
 2. Start PostgreSQL with `docker compose up -d db`.
    The Compose database is published on port `5433` so it does not collide with the PostgreSQL service already installed on this computer at port `5432`.
 3. In one terminal, start the API:
@@ -25,6 +25,7 @@ The first release proves one workflow: enter a meeting transcript or notes, extr
    python -m venv .venv
    .\.venv\Scripts\Activate.ps1
    pip install -r requirements.txt
+   alembic upgrade head
    uvicorn app.main:app --reload
    ```
 
@@ -36,7 +37,7 @@ The first release proves one workflow: enter a meeting transcript or notes, extr
    npm run dev
    ```
 
-5. Open <http://localhost:3000>. The API health endpoint is <http://localhost:8000/health> and the OpenAPI page is <http://localhost:8000/docs>.
+5. Open <http://localhost:3000>. Register at `/register`, then sign in at `/login`. The API health endpoint is <http://localhost:8000/health> and the OpenAPI page is <http://localhost:8000/docs>.
 
 ## Project layout
 
@@ -50,4 +51,4 @@ See `docs/architecture.md` and `docs/api-contract.md` for the initial design and
 
 ## Current foundation status
 
-The starter UI, API health route, configuration templates, and local PostgreSQL Compose service are in place. Database-backed features and the meeting workflow are subsequent implementation phases.
+The starter UI, API health route, account registration and login, protected account endpoint, SQLAlchemy data models, Alembic migration, configuration templates, and local PostgreSQL Compose service are in place. The next implementation phase adds meeting input and transcript/notes storage.
