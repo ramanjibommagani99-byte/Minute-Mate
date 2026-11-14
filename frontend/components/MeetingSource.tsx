@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api-client";
 
-type Meeting = { id: string; title: string; meeting_date: string | null; source_type: "transcript" | "notes"; source_text: string; created_at: string };
+type Meeting = { id: string; title: string; meeting_date: string | null; source_type: "transcript" | "notes" | "audio"; source_text: string; created_at: string };
 
 export default function MeetingSource({ id }: { id: string }) {
   const [meeting, setMeeting] = useState<Meeting | null>(null);

@@ -57,6 +57,8 @@ h1 { max-width: 740px; margin: 12px 0; font-size: clamp(2.2rem, 5vw, 4.25rem); l
 .optional { color: var(--muted); font-size: .82rem; font-weight: 400; }
 .meeting-form .button { width: fit-content; cursor: pointer; font: inherit; }
 .meeting-form .button:disabled { opacity: .7; cursor: wait; }
+.audio-panel { display: grid; gap: 12px; padding: 18px; border: 1px dashed #aabbb0; border-radius: 9px; background: #f9fbf9; }
+.audio-panel .button { justify-self: start; }
 .meeting-section { margin-top: 36px; }
 .meeting-list { display: grid; gap: 10px; }
 .meeting-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 19px 22px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }

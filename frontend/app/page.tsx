@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const steps = [
-  { title: "Capture the discussion", text: "Start with a meeting transcript or notes. Audio input can be added to the workflow next." },
+  { title: "Capture the discussion", text: "Start with a meeting transcript or notes, or transcribe an audio file when an API key is configured." },
   { title: "Review with evidence", text: "Inspect proposed tasks alongside the words that support them before approving any commitment." },
   { title: "Track what was agreed", text: "Keep approved work visible with a clear owner, deadline, and follow-up status." },
 ];

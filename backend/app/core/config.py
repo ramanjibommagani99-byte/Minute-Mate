@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     jwt_secret: str = Field(default="minutemate-local-development-secret-change-before-deploying", min_length=32)
     jwt_expire_minutes: int = 60
     openai_api_key: str = ""
+    transcription_model: str = "gpt-transcribe"
     frontend_origin: str = "http://localhost:3000"
     cookie_secure: bool = False
     cookie_name: str = "minutemate_access_token"

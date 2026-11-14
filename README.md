@@ -15,7 +15,7 @@ The first release proves one workflow: enter a meeting transcript or notes, extr
 
 ## Run locally on Windows
 
-1. Copy `.env.example` to `backend/.env`. Use a random secret of at least 32 characters for `JWT_SECRET`; set `COOKIE_SECURE=true` when serving over HTTPS. `OPENAI_API_KEY` is only needed when AI extraction is added.
+1. Copy `.env.example` to `backend/.env`. Use a random secret of at least 32 characters for `JWT_SECRET`; set `COOKIE_SECURE=true` when serving over HTTPS. Set `OPENAI_API_KEY` to enable optional audio transcription; transcript and notes entry works without it.
 2. Start PostgreSQL with `docker compose up -d db`.
    The Compose database is published on port `5433` so it does not collide with the PostgreSQL service already installed on this computer at port `5432`.
 3. In one terminal, start the API:

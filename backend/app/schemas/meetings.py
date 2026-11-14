@@ -5,7 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
-SourceType = Literal["transcript", "notes"]
+SourceType = Literal["transcript", "notes", "audio"]
 
 
 class MeetingCreate(BaseModel):
