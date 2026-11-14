@@ -17,6 +17,7 @@ The first release proves one workflow: enter a meeting transcript or notes, extr
 
 1. Copy `.env.example` to `backend/.env` and set `JWT_SECRET` and `OPENAI_API_KEY` when those features are added. The foundation does not call the AI API yet.
 2. Start PostgreSQL with `docker compose up -d db`.
+   The Compose database is published on port `5433` so it does not collide with the PostgreSQL service already installed on this computer at port `5432`.
 3. In one terminal, start the API:
 
    ```powershell
