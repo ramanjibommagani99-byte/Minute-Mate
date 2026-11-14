@@ -1,0 +1,1 @@
+"""MinuteMate API application package."""

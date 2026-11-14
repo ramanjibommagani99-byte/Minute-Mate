@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: minutemate
+      POSTGRES_USER: minutemate
+      POSTGRES_PASSWORD: minutemate
+    ports:
+      - "5432:5432"
+    volumes:
+      - minutemate_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U minutemate -d minutemate"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  minutemate_postgres_data:

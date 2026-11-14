@@ -1,0 +1,1 @@
+-- Core MinuteMate schema will be introduced with the database model phase.
