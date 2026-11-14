@@ -50,4 +50,21 @@ h1 { max-width: 740px; margin: 12px 0; font-size: clamp(2.2rem, 5vw, 4.25rem); l
 .auth-link { color: var(--green); font-weight: 650; text-decoration: underline; text-underline-offset: 3px; }
 .nav-button { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .nav-button:hover { color: var(--green); }
+.meeting-form { display: grid; gap: 18px; width: min(720px, 100%); margin-top: 30px; padding: 26px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.field input, .field select, .field textarea { width: 100%; min-height: 44px; padding: 11px 12px; border: 1px solid #bccbc1; border-radius: 7px; background: white; color: var(--ink); font: inherit; }
+.field textarea { resize: vertical; line-height: 1.55; }
+.field input:focus, .field select:focus, .field textarea:focus { outline: 3px solid #bce1ce; border-color: var(--green); }
+.optional { color: var(--muted); font-size: .82rem; font-weight: 400; }
+.meeting-form .button { width: fit-content; cursor: pointer; font: inherit; }
+.meeting-form .button:disabled { opacity: .7; cursor: wait; }
+.meeting-section { margin-top: 36px; }
+.meeting-list { display: grid; gap: 10px; }
+.meeting-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 19px 22px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.meeting-row:hover { border-color: var(--green); }
+.meeting-row > span:first-child { display: grid; gap: 6px; }
+.meeting-row small { color: var(--muted); }
+.source-badge { padding: 5px 9px; border-radius: 999px; background: #e7f3ec; color: var(--green); font-size: .8rem; text-transform: capitalize; }
+.source-card { margin-top: 30px; padding: 25px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.source-card h2 { margin-top: 0; font-size: 1rem; }
+.source-text { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; font: inherit; line-height: 1.7; }
 @media (max-width: 640px) { .topbar { align-items: flex-start; flex-direction: column; } .nav { gap: 14px; } .main { margin-top: 36px; } }
