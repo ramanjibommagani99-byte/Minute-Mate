@@ -1,0 +1,189 @@
+from datetime import date
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.core.dependencies import get_current_user
+from app.db.session import get_db
+from app.models.audit_log import AuditLog
+from app.models.meeting import Meeting
+from app.models.task import Task
+from app.models.task_evidence import TaskEvidence
+from app.models.user import User
+from app.schemas.extraction import TaskDecisionRequest, TaskHistoryResponse, TaskProposalResponse, TaskUpdateRequest
+from app.services.trust import check_task_trust, quote_exists, serialize_task, timestamp_matches_source
+
+router = APIRouter()
+
+
+def get_owned_task(db: Session, task_id: UUID, current_user: User) -> tuple[Task, Meeting]:
+    row = db.execute(
+        select(Task, Meeting)
+        .join(Meeting, Meeting.id == Task.meeting_id)
+        .where(Task.id == task_id, Meeting.owner_id == current_user.id)
+        .with_for_update(of=Task)
+    ).first()
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    return row[0], row[1]
+
+
+def require_organizer(user: User) -> None:
+    if user.role != "organizer":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only meeting organizers can review tasks")
+
+
+def task_snapshot(task: Task) -> dict:
+    return {
+        "title": task.title,
+        "description": task.description,
+        "assignee_name": task.assignee_name,
+        "due_date": task.due_date.isoformat() if task.due_date else None,
+        "due_date_original": task.due_date_original,
+        "status": task.status,
+        "approval_status": task.approval_status,
+        "confidence_score": task.confidence_score,
+        "evidence": [
+            {"quote_text": item.quote_text, "timestamp_seconds": item.timestamp_seconds}
+            for item in task.evidence
+        ],
+    }
+
+
+def ensure_reviewable(task: Task) -> None:
+    if task.approval_status in ("approved", "rejected"):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This task has already been finalized")
+
+
+@router.get("/{task_id}/history", response_model=list[TaskHistoryResponse])
+def get_task_history(
+    task_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[TaskHistoryResponse]:
+    task, _meeting = get_owned_task(db, task_id, current_user)
+    entries = db.scalars(
+        select(AuditLog)
+        .where(AuditLog.task_id == task.id)
+        .order_by(AuditLog.created_at.desc(), AuditLog.id.desc())
+    ).all()
+    return [TaskHistoryResponse(
+        id=entry.id,
+        action=entry.action,
+        user_id=entry.user_id,
+        old_value=entry.old_value,
+        new_value=entry.new_value,
+        created_at=entry.created_at,
+    ) for entry in entries]
+
+
+@router.patch("/{task_id}", response_model=TaskProposalResponse)
+def update_task(
+    task_id: UUID,
+    payload: TaskUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TaskProposalResponse:
+    require_organizer(current_user)
+    task, meeting = get_owned_task(db, task_id, current_user)
+    ensure_reviewable(task)
+    changes = payload.model_dump(exclude_unset=True)
+    if not changes:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Provide at least one field to update")
+    if "title" in changes and changes["title"] is None:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Task title cannot be blank")
+
+    old_value = task_snapshot(task)
+    evidence_quote = changes.pop("evidence_quote", None) if "evidence_quote" in changes else None
+    timestamp_seconds = changes.pop("timestamp_seconds", None) if "timestamp_seconds" in changes else None
+    quote_was_updated = "evidence_quote" in payload.model_fields_set
+    timestamp_was_updated = "timestamp_seconds" in payload.model_fields_set
+
+    for field, value in changes.items():
+        if field in {"title", "assignee_name", "due_date_original"} and isinstance(value, str):
+            value = value.strip() or None
+        setattr(task, field, value)
+
+    if quote_was_updated:
+        if evidence_quote is None:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Task evidence cannot be removed")
+        if not quote_exists(meeting.source_text, evidence_quote):
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Evidence quote must match the original meeting source")
+        if task.evidence:
+            task.evidence[0].quote_text = evidence_quote
+            if not timestamp_was_updated:
+                task.evidence[0].timestamp_seconds = None
+        else:
+            task.evidence.append(TaskEvidence(quote_text=evidence_quote, match_score=1.0))
+
+    if timestamp_was_updated:
+        if not task.evidence:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Add an evidence quote before setting its timestamp")
+        quote = evidence_quote if quote_was_updated else task.evidence[0].quote_text
+        if timestamp_seconds is not None and not timestamp_matches_source(meeting.source_text, quote, timestamp_seconds):
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Timestamp must match a marker next to the evidence quote in the source")
+        task.evidence[0].timestamp_seconds = timestamp_seconds
+
+    # Any organizer edit returns the proposal to the review queue.
+    task.approval_status = "needs_review"
+    db.flush()
+    new_value = task_snapshot(task)
+    db.add(AuditLog(
+        task_id=task.id,
+        meeting_id=meeting.id,
+        user_id=current_user.id,
+        action="task.edited",
+        old_value=old_value,
+        new_value=new_value,
+    ))
+    db.commit()
+    db.refresh(task)
+    return serialize_task(meeting, task)
+
+
+@router.post("/{task_id}/decision", response_model=TaskProposalResponse)
+def decide_task(
+    task_id: UUID,
+    payload: TaskDecisionRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TaskProposalResponse:
+    require_organizer(current_user)
+    task, meeting = get_owned_task(db, task_id, current_user)
+    ensure_reviewable(task)
+    old_value = task_snapshot(task)
+
+    if payload.action == "approve":
+        trust = check_task_trust(meeting, task)
+        blocking = [warning for warning in trust.warnings if not warning.startswith("Low model confidence")]
+        if blocking:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={"message": "Resolve source trust issues before approving this task", "checks": blocking},
+            )
+        task.approval_status = "approved"
+        audit_action = "task.approved"
+    elif payload.action == "reject":
+        task.approval_status = "rejected"
+        audit_action = "task.rejected"
+    else:
+        task.approval_status = "needs_review"
+        audit_action = "task.flagged"
+
+    db.flush()
+    new_value = task_snapshot(task)
+    if payload.note:
+        new_value["review_note"] = payload.note.strip()
+    db.add(AuditLog(
+        task_id=task.id,
+        meeting_id=meeting.id,
+        user_id=current_user.id,
+        action=audit_action,
+        old_value=old_value,
+        new_value=new_value,
+    ))
+    db.commit()
+    db.refresh(task)
+    return serialize_task(meeting, task)

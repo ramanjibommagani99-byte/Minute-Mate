@@ -1,5 +1,5 @@
-from datetime import date
-from typing import Any
+from datetime import date, datetime
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -17,6 +17,7 @@ class ProposedTask(_StrictOutput):
     due_date_original: str | None = Field(max_length=120)
     confidence_score: float = Field(ge=0, le=1)
     evidence_quote: str = Field(min_length=1)
+    timestamp_seconds: int | None = Field(ge=0)
 
     @field_validator("title", "evidence_quote")
     @classmethod
@@ -69,6 +70,15 @@ class EvidenceResponse(BaseModel):
     match_score: float | None
 
 
+class TaskTrustResponse(BaseModel):
+    evidence_valid: bool
+    timestamp_valid: bool
+    date_valid: bool
+    confidence_valid: bool
+    ready_for_approval: bool
+    warnings: list[str]
+
+
 class TaskProposalResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
@@ -81,6 +91,7 @@ class TaskProposalResponse(BaseModel):
     approval_status: str
     confidence_score: float
     evidence: list[EvidenceResponse]
+    trust: TaskTrustResponse
 
 
 class DecisionResponse(BaseModel):
@@ -118,6 +129,41 @@ class MeetingExtractionResponse(BaseModel):
     open_questions: list[OpenQuestionResponse]
 
 
+class TaskUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    title: str | None = Field(default=None, min_length=1, max_length=250)
+    description: str | None = None
+    assignee_name: str | None = Field(default=None, max_length=120)
+    due_date: date | None = None
+    due_date_original: str | None = Field(default=None, max_length=120)
+    evidence_quote: str | None = Field(default=None, min_length=1)
+    timestamp_seconds: int | None = Field(default=None, ge=0)
+
+    @field_validator("title", "evidence_quote")
+    @classmethod
+    def reject_blank_update(cls, value: str | None) -> str | None:
+        if value is not None:
+            value = value.strip()
+            if not value:
+                raise ValueError("This value cannot be blank")
+        return value
+
+
+class TaskDecisionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    action: Literal["approve", "reject", "flag"]
+    note: str | None = Field(default=None, max_length=1000)
+
+
+class TaskHistoryResponse(BaseModel):
+    id: UUID
+    action: str
+    user_id: UUID | None
+    old_value: dict[str, Any] | None
+    new_value: dict[str, Any] | None
+    created_at: datetime
+
+
 def extraction_schema() -> dict[str, Any]:
     """Strict JSON Schema sent to the Responses API (all keys are required)."""
     def nullable_string() -> dict[str, Any]:
@@ -143,6 +189,7 @@ def extraction_schema() -> dict[str, Any]:
                 "due_date_original": nullable_string(),
                 "confidence_score": {"type": "number"},
                 "evidence_quote": {"type": "string"},
+                "timestamp_seconds": {"type": ["integer", "null"]},
             }),
         },
         "decisions": {

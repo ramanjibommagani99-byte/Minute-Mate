@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api-client";
+import TaskReviewCard, { type TaskReviewItem } from "@/components/TaskReviewCard";
 
-type Evidence = { id: string; quote_text: string; match_score: number | null };
 type Extraction = {
   meeting_id: string;
   meeting_title: string;
   summary: string | null;
-  tasks: Array<{ id: string; title: string; description: string | null; assignee_name: string | null; due_date: string | null; due_date_original: string | null; approval_status: string; confidence_score: number; evidence: Evidence[] }>;
+  tasks: TaskReviewItem[];
   decisions: Array<{ id: string; decision_text: string; evidence_quote: string; confidence_score: number }>;
   risks: Array<{ id: string; risk_text: string; impact: string | null; evidence_quote: string; confidence_score: number }>;
   open_questions: Array<{ id: string; question_text: string; evidence_quote: string; confidence_score: number }>;
@@ -32,6 +32,10 @@ export default function MeetingReview({ meetingId }: { meetingId: string }) {
       .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "Could not load extraction."));
   }, [meetingId]);
 
+  function updateTask(updated: TaskReviewItem) {
+    setData((current) => current ? { ...current, tasks: current.tasks.map((task) => task.id === updated.id ? updated : task) } : current);
+  }
+
   if (error) return <main className="main"><p className="form-error" role="alert">{error}</p></main>;
   if (!data) return <main className="main"><p className="form-note">Loading extracted proposals…</p></main>;
 
@@ -43,12 +47,7 @@ export default function MeetingReview({ meetingId }: { meetingId: string }) {
     {isEmpty ? <div className="placeholder">No extraction has been saved yet. Return to the meeting source to run it.</div> : <>
       {data.summary && <section className="summary-card"><h2>Meeting summary</h2><p>{data.summary}</p></section>}
       <section className="review-section"><h2>Proposed tasks <span className="count-badge">{data.tasks.length}</span></h2>
-        {data.tasks.length ? <div className="review-list">{data.tasks.map((task) => <article className="review-card" key={task.id}>
-          <div className="review-card-heading"><h3>{task.title}</h3><Confidence value={task.confidence_score} /></div>
-          {task.description && <p>{task.description}</p>}
-          <dl className="proposal-meta">{task.assignee_name && <div><dt>Suggested owner</dt><dd>{task.assignee_name}</dd></div>}{(task.due_date || task.due_date_original) && <div><dt>Due date</dt><dd>{task.due_date ?? task.due_date_original}</dd></div>}<div><dt>Review state</dt><dd>{task.approval_status.replaceAll("_", " ")}</dd></div></dl>
-          {task.evidence.map((evidence) => <EvidenceQuote key={evidence.id} quote={evidence.quote_text} />)}
-        </article>)}</div> : <p className="empty-line">No proposed tasks found.</p>}
+        {data.tasks.length ? <div className="review-list">{data.tasks.map((task) => <TaskReviewCard task={task} onUpdate={updateTask} key={task.id} />)}</div> : <p className="empty-line">No proposed tasks found.</p>}
       </section>
       <ReviewTextSection title="Decisions" empty="No decisions found." items={data.decisions.map((item) => ({ id: item.id, label: item.decision_text, quote: item.evidence_quote, confidence: item.confidence_score }))} />
       <ReviewTextSection title="Risks" empty="No risks found." items={data.risks.map((item) => ({ id: item.id, label: item.risk_text, quote: item.evidence_quote, confidence: item.confidence_score, detail: item.impact ?? undefined }))} />

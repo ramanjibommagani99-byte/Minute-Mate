@@ -18,5 +18,8 @@ The user interface is a Next.js App Router application. It calls a FastAPI backe
 
 - Keep the original transcript available for review.
 - Store evidence and original date wording with each proposal.
+- Check evidence quotes against the source and only accept timestamps that match transcript markers.
+- Keep low-confidence or date-uncertain proposals in the organizer review queue.
+- Audit edits, approvals, rejections, and flags with before/after values.
 - Do not create an external action for an unapproved proposal.
 - Record material edits and approval state changes in an audit history.

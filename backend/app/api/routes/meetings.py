@@ -26,6 +26,7 @@ from app.schemas.extraction import (
 )
 from app.schemas.meetings import MeetingCreate, MeetingResponse
 from app.services.extraction import extract_meeting
+from app.services.trust import LOW_CONFIDENCE_THRESHOLD, check_task_trust, serialize_task
 
 router = APIRouter()
 MAX_AUDIO_BYTES = 25 * 1024 * 1024
@@ -123,7 +124,7 @@ def extraction_result(db: Session, meeting: Meeting) -> MeetingExtractionRespons
         meeting_id=meeting.id,
         meeting_title=meeting.title,
         summary=meeting.summary,
-        tasks=[TaskProposalResponse.model_validate(task) for task in tasks],
+        tasks=[serialize_task(meeting, task) for task in tasks],
         decisions=[DecisionResponse.model_validate(item) for item in decisions],
         risks=[RiskResponse.model_validate(item) for item in risks],
         open_questions=[OpenQuestionResponse.model_validate(item) for item in questions],
@@ -185,8 +186,32 @@ async def create_meeting_extraction(
                 confidence_score=proposal.confidence_score,
                 approval_status="pending",
             )
-            task.evidence.append(TaskEvidence(quote_text=proposal.evidence_quote, match_score=1.0))
+            task.evidence.append(TaskEvidence(
+                quote_text=proposal.evidence_quote,
+                timestamp_seconds=proposal.timestamp_seconds,
+                match_score=1.0,
+            ))
+            trust = check_task_trust(meeting, task)
+            if not trust.ready_for_approval or task.confidence_score < LOW_CONFIDENCE_THRESHOLD:
+                task.approval_status = "needs_review"
             db.add(task)
+            db.flush()
+            db.add(AuditLog(
+                task_id=task.id,
+                meeting_id=meeting.id,
+                user_id=current_user.id,
+                action="task.proposed",
+                new_value={
+                    "title": task.title,
+                    "description": task.description,
+                    "assignee_name": task.assignee_name,
+                    "due_date": task.due_date.isoformat() if task.due_date else None,
+                    "due_date_original": task.due_date_original,
+                    "approval_status": task.approval_status,
+                    "confidence_score": task.confidence_score,
+                    "evidence": [{"quote_text": item.quote_text, "timestamp_seconds": item.timestamp_seconds} for item in task.evidence],
+                },
+            ))
 
         db.add_all([
             Decision(meeting_id=meeting.id, decision_text=item.decision_text, evidence_quote=item.evidence_quote, confidence_score=item.confidence_score)

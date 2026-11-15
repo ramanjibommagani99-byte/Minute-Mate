@@ -16,8 +16,9 @@ Every item must include an exact supporting quote copied from the source. If a s
 items for a category, return an empty array. A proposed task must be a concrete action with a
 responsible person only when explicitly named. Normalize a due date to YYYY-MM-DD only when the
 date is explicit or unambiguous relative to the meeting date; otherwise leave due_date_iso null
-and preserve the wording in due_date_original. Confidence must be between 0 and 1 and reflect
-how directly the source supports that item."""
+and preserve the wording in due_date_original. Return timestamp_seconds only when the transcript
+has a timestamp marker directly associated with the quoted evidence; otherwise use null. Confidence
+must be between 0 and 1 and reflect how directly the source supports that item."""
 
 
 def normalize_quote(value: str) -> str:

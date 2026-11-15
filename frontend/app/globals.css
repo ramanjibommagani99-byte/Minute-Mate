@@ -88,4 +88,27 @@ h1 { max-width: 740px; margin: 12px 0; font-size: clamp(2.2rem, 5vw, 4.25rem); l
 .evidence-quote { margin: 16px 0 0; padding: 12px 15px; border-left: 3px solid var(--green); background: #f4f8f5; color: #35443a; line-height: 1.55; }
 .empty-line { color: var(--muted); }
 .review-disclaimer { margin-top: 30px; padding: 14px; background: #fff8e8; border-radius: 8px; }
+.task-review-card { display: grid; gap: 14px; }
+.status-badge { padding: 5px 9px; border-radius: 999px; background: #f2efe3; color: #6f5a17; font-size: .78rem; text-transform: capitalize; white-space: nowrap; }
+.status-approved { background: #e7f3ec; color: var(--green); }
+.status-rejected { background: #fbe9e9; color: #9a3030; }
+.status-needs_review { background: #fff1d5; color: #815700; }
+.source-timestamp { margin: 7px 0 0; color: var(--muted); font-size: .82rem; }
+.trust-checks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.trust-check { padding: 5px 9px; border-radius: 999px; font-size: .78rem; }
+.trust-check.valid { background: #e7f3ec; color: var(--green); }
+.trust-check.invalid { background: #fff1d5; color: #815700; }
+.trust-warning { margin: 0; padding: 10px 12px; border-left: 3px solid #d09119; background: #fff8e8; color: #684c12 !important; font-size: .88rem; }
+.review-note-field { margin-top: 4px; }
+.review-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+.review-actions .button { cursor: pointer; font: inherit; }
+.review-actions .button:disabled { opacity: .55; cursor: not-allowed; }
+.button.danger { border-color: #a43a3a; background: #a43a3a; color: white; }
+.task-edit-form { display: grid; gap: 14px; }
+.history-toggle { justify-self: start; padding: 0; border: 0; background: none; color: var(--green); font: inherit; font-size: .88rem; font-weight: 650; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.task-history { display: grid; gap: 8px; }
+.history-entry { border: 1px solid var(--line); border-radius: 8px; background: #fbfcfb; }
+.history-entry summary { display: flex; justify-content: space-between; gap: 12px; padding: 11px 13px; cursor: pointer; font-size: .88rem; text-transform: capitalize; }
+.history-entry time { color: var(--muted); font-size: .8rem; text-transform: none; }
+.history-entry pre { margin: 0; padding: 12px; overflow-x: auto; border-top: 1px solid var(--line); color: var(--muted); font-size: .78rem; white-space: pre-wrap; }
 @media (max-width: 640px) { .topbar { align-items: flex-start; flex-direction: column; } .nav { gap: 14px; } .main { margin-top: 36px; } }
