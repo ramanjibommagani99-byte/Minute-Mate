@@ -4,7 +4,7 @@ MinuteMate turns meeting discussions into evidence-linked task proposals that an
 
 ## MVP boundary
 
-The first release proves one workflow: enter a meeting transcript or notes, extract proposed tasks, decisions, risks, and open questions, review the evidence, then approve tasks before tracking them. Audio transcription is optional. Slack and Google Calendar are simulated in the MVP; live third-party connections are deferred.
+The first release proves one workflow: enter a meeting transcript or notes, extract proposed tasks, decisions, risks, and open questions, review the evidence, approve tasks, then track approved work from the filterable dashboard. Audio transcription is optional. Slack and Google Calendar are simulated in the MVP; live third-party connections are deferred.
 
 ## Requirements
 

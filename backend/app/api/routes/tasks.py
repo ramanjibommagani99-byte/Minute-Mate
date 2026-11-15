@@ -1,7 +1,8 @@
 from datetime import date
+from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -12,10 +13,27 @@ from app.models.meeting import Meeting
 from app.models.task import Task
 from app.models.task_evidence import TaskEvidence
 from app.models.user import User
-from app.schemas.extraction import TaskDecisionRequest, TaskHistoryResponse, TaskProposalResponse, TaskUpdateRequest
+from app.schemas.extraction import (
+    TaskDecisionRequest,
+    TaskHistoryResponse,
+    TaskProposalResponse,
+    TaskStatusUpdateRequest,
+    TaskTrackingResponse,
+    TaskUpdateRequest,
+)
 from app.services.trust import check_task_trust, quote_exists, serialize_task, timestamp_matches_source
 
 router = APIRouter()
+
+
+def tracking_response(task: Task, meeting: Meeting) -> TaskTrackingResponse:
+    proposal = serialize_task(meeting, task)
+    return TaskTrackingResponse(
+        **proposal.model_dump(),
+        meeting_id=meeting.id,
+        meeting_title=meeting.title,
+        meeting_date=meeting.meeting_date,
+    )
 
 
 def get_owned_task(db: Session, task_id: UUID, current_user: User) -> tuple[Task, Meeting]:
@@ -55,6 +73,68 @@ def task_snapshot(task: Task) -> dict:
 def ensure_reviewable(task: Task) -> None:
     if task.approval_status in ("approved", "rejected"):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This task has already been finalized")
+
+
+@router.get("", response_model=list[TaskTrackingResponse])
+def list_tasks(
+    approval_status: Literal["pending", "approved", "needs_review", "rejected", "all"] | None = Query(default=None),
+    task_status: Literal["not_started", "in_progress", "completed", "overdue"] | None = Query(default=None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[TaskTrackingResponse]:
+    statement = select(Task, Meeting).join(Meeting, Meeting.id == Task.meeting_id).where(Meeting.owner_id == current_user.id)
+    if approval_status == "all":
+        pass
+    elif approval_status is not None:
+        statement = statement.where(Task.approval_status == approval_status)
+    else:
+        statement = statement.where(Task.approval_status.in_(("pending", "approved", "needs_review")))
+    if task_status is not None:
+        statement = statement.where(Task.status == task_status)
+    rows = db.execute(
+        statement.order_by(Task.due_date.asc().nullslast(), Task.created_at.desc())
+    ).all()
+    return [tracking_response(task, meeting) for task, meeting in rows]
+
+
+@router.get("/{task_id}", response_model=TaskTrackingResponse)
+def get_task_details(
+    task_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TaskTrackingResponse:
+    task, meeting = get_owned_task(db, task_id, current_user)
+    return tracking_response(task, meeting)
+
+
+@router.patch("/{task_id}/status", response_model=TaskTrackingResponse)
+def update_task_status(
+    task_id: UUID,
+    payload: TaskStatusUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TaskTrackingResponse:
+    require_organizer(current_user)
+    task, meeting = get_owned_task(db, task_id, current_user)
+    if task.approval_status != "approved":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Only approved tasks can move through tracking statuses")
+    if task.status == payload.status:
+        return tracking_response(task, meeting)
+
+    old_value = {"status": task.status, "approval_status": task.approval_status}
+    task.status = payload.status
+    db.flush()
+    db.add(AuditLog(
+        task_id=task.id,
+        meeting_id=meeting.id,
+        user_id=current_user.id,
+        action="task.status_changed",
+        old_value=old_value,
+        new_value={"status": task.status, "approval_status": task.approval_status},
+    ))
+    db.commit()
+    db.refresh(task)
+    return tracking_response(task, meeting)
 
 
 @router.get("/{task_id}/history", response_model=list[TaskHistoryResponse])

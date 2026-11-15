@@ -164,6 +164,17 @@ class TaskHistoryResponse(BaseModel):
     created_at: datetime
 
 
+class TaskStatusUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    status: Literal["not_started", "in_progress", "completed", "overdue"]
+
+
+class TaskTrackingResponse(TaskProposalResponse):
+    meeting_id: UUID
+    meeting_title: str
+    meeting_date: datetime | None
+
+
 def extraction_schema() -> dict[str, Any]:
     """Strict JSON Schema sent to the Responses API (all keys are required)."""
     def nullable_string() -> dict[str, Any]:

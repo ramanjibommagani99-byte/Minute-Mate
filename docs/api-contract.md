@@ -18,5 +18,8 @@ The API is served at `http://localhost:8000`. Interactive documentation is avail
 | PATCH | `/tasks/{task_id}` | Organizer edits proposal fields and source evidence; edits return it to review |
 | POST | `/tasks/{task_id}/decision` | Organizer approves, rejects, or flags a task; trust checks gate approval |
 | GET | `/tasks/{task_id}/history` | Returns the task audit history with before/after values and review notes |
+| GET | `/tasks` | Lists the signed-in organizer's approved and pending tasks; optional approval and progress filters |
+| GET | `/tasks/{task_id}` | Returns owner-scoped task details and evidence |
+| PATCH | `/tasks/{task_id}/status` | Updates progress for an approved task and records the status change |
 
 The basic input path accepts `title`, optional ISO `meeting_date`, `source_type` (`transcript`, `notes`, or `audio`), and `source_text`. The optional transcription route accepts supported audio files up to 25 MB and sends them to OpenAI for transcription; MinuteMate does not retain the uploaded audio, and the returned transcript can be saved as the meeting source. Extraction uses strict structured output and persists only evidence quotes that match the source. Organizer edits, decisions, and review notes are stored in `audit_logs`. Approval requires valid source evidence, timestamps, dates, and confidence range; low confidence is shown as a warning for organizer consideration. All extracted tasks start unapproved.

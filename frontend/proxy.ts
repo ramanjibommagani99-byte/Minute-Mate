@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const sessionCookie = "minutemate_access_token";
-const protectedPrefixes = ["/dashboard", "/meetings", "/review"];
+const protectedPrefixes = ["/dashboard", "/meetings", "/review", "/tasks"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -20,5 +20,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/meetings/:path*", "/review/:path*", "/login", "/register"],
+  matcher: ["/dashboard/:path*", "/meetings/:path*", "/review/:path*", "/tasks/:path*", "/login", "/register"],
 };
