@@ -36,3 +36,4 @@ class Task(TimestampMixin, Base):
     owner: Mapped["User | None"] = relationship(back_populates="assigned_tasks", foreign_keys=[owner_id])
     evidence: Mapped[list["TaskEvidence"]] = relationship(back_populates="task", cascade="all, delete-orphan")
     sync_events: Mapped[list["TaskSyncEvent"]] = relationship(back_populates="task", cascade="all, delete-orphan")
+    reminders: Mapped[list["TaskReminder"]] = relationship(back_populates="task", cascade="all, delete-orphan")

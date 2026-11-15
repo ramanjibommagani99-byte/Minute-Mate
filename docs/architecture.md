@@ -22,4 +22,6 @@ The user interface is a Next.js App Router application. It calls a FastAPI backe
 - Keep low-confidence or date-uncertain proposals in the organizer review queue.
 - Audit edits, approvals, rejections, and flags with before/after values.
 - Do not create an external action for an unapproved proposal.
+- Keep Slack and Calendar actions in the demo simulated; store each attempted demo action as a sync event.
+- Surface scheduled reminders in the app while the organizer has MinuteMate open.
 - Record material edits and approval state changes in an audit history.

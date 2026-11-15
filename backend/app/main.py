@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.auth import router as auth_router
 from app.api.routes.meetings import router as meetings_router
+from app.api.routes.reminders import router as reminders_router
 from app.api.routes.tasks import router as tasks_router
 from app.core.config import settings
 
@@ -23,6 +24,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/auth", tags=["authentication"])
 app.include_router(meetings_router, prefix="/meetings", tags=["meetings"])
 app.include_router(tasks_router, prefix="/tasks", tags=["tasks"])
+app.include_router(reminders_router, prefix="", tags=["reminders"])
 
 
 @app.get("/health", tags=["system"])

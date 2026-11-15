@@ -7,6 +7,7 @@ from app.models.open_question import OpenQuestion
 from app.models.participant import Participant
 from app.models.task import Task
 from app.models.task_evidence import TaskEvidence
+from app.models.task_reminder import TaskReminder
 from app.models.task_sync_event import TaskSyncEvent
 from app.models.user import User
 
@@ -20,6 +21,7 @@ __all__ = [
     "Participant",
     "Task",
     "TaskEvidence",
+    "TaskReminder",
     "TaskSyncEvent",
     "User",
 ]

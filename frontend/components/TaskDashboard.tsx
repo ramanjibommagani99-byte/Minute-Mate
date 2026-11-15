@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api-client";
 import TaskStatusControl, { type TaskTracking } from "@/components/TaskStatusControl";
+import TaskRemindersPanel from "@/components/TaskRemindersPanel";
 
 type ApprovalFilter = "active" | "all" | "pending" | "approved" | "needs_review" | "rejected";
 type StatusFilter = "all" | TaskTracking["status"];
@@ -51,6 +52,7 @@ export default function TaskDashboard() {
     <p className="eyebrow">Task tracking</p>
     <h1>Team follow-through</h1>
     <p className="lead">See what is awaiting review and track approved commitments.</p>
+    <TaskRemindersPanel />
     <section className="task-filters" aria-label="Filter tasks">
       <label className="field">Approval state<select value={approvalFilter} onChange={(event) => setApprovalFilter(event.target.value as ApprovalFilter)}>{Object.entries(approvalLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       <label className="field">Progress status<select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}><option value="all">All progress states</option><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="overdue">Overdue</option></select></label>

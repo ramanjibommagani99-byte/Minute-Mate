@@ -175,6 +175,55 @@ class TaskTrackingResponse(TaskProposalResponse):
     meeting_date: datetime | None
 
 
+class ReminderCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    remind_at: datetime
+    message: str | None = Field(default=None, max_length=500)
+
+    @field_validator("remind_at")
+    @classmethod
+    def require_timezone(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("remind_at must include a timezone")
+        return value
+
+    @field_validator("message")
+    @classmethod
+    def normalize_message(cls, value: str | None) -> str | None:
+        if value is not None:
+            value = value.strip()
+        return value or None
+
+
+class ReminderResponse(BaseModel):
+    id: UUID
+    task_id: UUID
+    task_title: str
+    remind_at: datetime
+    message: str | None
+    status: Literal["scheduled", "dismissed"]
+    is_due: bool
+    created_at: datetime
+    dismissed_at: datetime | None
+
+
+class DemoSyncRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    provider: Literal["slack", "google_calendar"]
+
+
+class TaskSyncEventResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    task_id: UUID
+    provider: Literal["slack", "google_calendar"]
+    external_task_id: str | None
+    sync_status: Literal["pending", "succeeded", "failed"]
+    error_message: str | None
+    created_at: datetime
+    demo_only: bool = True
+
+
 def extraction_schema() -> dict[str, Any]:
     """Strict JSON Schema sent to the Responses API (all keys are required)."""
     def nullable_string() -> dict[str, Any]:

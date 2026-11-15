@@ -139,4 +139,25 @@ h1 { max-width: 740px; margin: 12px 0; font-size: clamp(2.2rem, 5vw, 4.25rem); l
 .history-entry summary { display: flex; justify-content: space-between; gap: 12px; padding: 11px 13px; cursor: pointer; font-size: .88rem; text-transform: capitalize; }
 .history-entry time { color: var(--muted); font-size: .8rem; text-transform: none; }
 .history-entry pre { margin: 0; padding: 12px; overflow-x: auto; border-top: 1px solid var(--line); color: var(--muted); font-size: .78rem; white-space: pre-wrap; }
+.task-actions-panel { display: grid; gap: 18px; margin-top: 28px; padding: 22px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.task-actions-panel > h2 { margin: 0; font-size: 1.2rem; }
+.reminder-form { display: grid; gap: 13px; max-width: 560px; padding: 18px; border-radius: 10px; background: #f6f9f7; }
+.reminder-form h3, .demo-integration-block h3, .task-reminder-list h3, .task-demo-history h3 { margin: 0; font-size: 1rem; }
+.reminder-form .button { justify-self: start; cursor: pointer; font: inherit; }
+.reminder-form .button:disabled { opacity: .65; }
+.task-reminder-list, .task-demo-history, .demo-integration-block { display: grid; gap: 10px; }
+.task-reminder-list p, .task-demo-history p { margin: 0; color: var(--muted); font-size: .9rem; }
+.demo-integration-block { padding-top: 16px; border-top: 1px solid var(--line); }
+.reminders-panel { display: grid; gap: 12px; margin: 24px 0; padding: 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.reminders-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.reminders-heading .eyebrow { margin: 0 0 4px; }
+.reminders-heading h2 { margin: 0; font-size: 1.15rem; }
+.reminder-list { display: grid; gap: 8px; }
+.reminder-item { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 9px; background: #fbfcfb; }
+.reminder-item.is-due { border-color: #d09119; background: #fff8e8; }
+.reminder-item > div { display: grid; gap: 4px; }
+.reminder-item p { margin: 0; color: var(--muted); font-size: .88rem; }
+.reminder-item time { color: var(--muted); font-size: .78rem; }
+.reminder-item a:hover { color: var(--green); }
+.reminder-dismiss { min-height: 36px; cursor: pointer; font: inherit; }
 @media (max-width: 640px) { .topbar { align-items: flex-start; flex-direction: column; } .nav { gap: 14px; } .main { margin-top: 36px; } }

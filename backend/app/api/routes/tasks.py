@@ -1,6 +1,6 @@
 from datetime import date
 from typing import Literal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -12,12 +12,15 @@ from app.models.audit_log import AuditLog
 from app.models.meeting import Meeting
 from app.models.task import Task
 from app.models.task_evidence import TaskEvidence
+from app.models.task_sync_event import TaskSyncEvent
 from app.models.user import User
 from app.schemas.extraction import (
     TaskDecisionRequest,
+    DemoSyncRequest,
     TaskHistoryResponse,
     TaskProposalResponse,
     TaskStatusUpdateRequest,
+    TaskSyncEventResponse,
     TaskTrackingResponse,
     TaskUpdateRequest,
 )
@@ -135,6 +138,52 @@ def update_task_status(
     db.commit()
     db.refresh(task)
     return tracking_response(task, meeting)
+
+
+@router.post("/{task_id}/demo-sync", response_model=TaskSyncEventResponse, status_code=status.HTTP_201_CREATED)
+def create_demo_sync_event(
+    task_id: UUID,
+    payload: DemoSyncRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TaskSyncEvent:
+    require_organizer(current_user)
+    task, meeting = get_owned_task(db, task_id, current_user)
+    if task.approval_status != "approved":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Only approved tasks can be sent to a demo integration")
+
+    event = TaskSyncEvent(
+        task_id=task.id,
+        provider=payload.provider,
+        external_task_id=f"demo-{payload.provider}-{uuid4().hex[:12]}",
+        sync_status="succeeded",
+    )
+    db.add(event)
+    db.flush()
+    db.add(AuditLog(
+        task_id=task.id,
+        meeting_id=meeting.id,
+        user_id=current_user.id,
+        action="task.demo_integration_triggered",
+        new_value={"provider": payload.provider, "demo_only": True, "event_id": str(event.id)},
+    ))
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+@router.get("/{task_id}/demo-sync-events", response_model=list[TaskSyncEventResponse])
+def list_demo_sync_events(
+    task_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[TaskSyncEvent]:
+    task, _meeting = get_owned_task(db, task_id, current_user)
+    return list(db.scalars(
+        select(TaskSyncEvent)
+        .where(TaskSyncEvent.task_id == task.id, TaskSyncEvent.provider.in_(("slack", "google_calendar")))
+        .order_by(TaskSyncEvent.created_at.desc())
+    ).all())
 
 
 @router.get("/{task_id}/history", response_model=list[TaskHistoryResponse])
