@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { apiRequest } from "@/lib/api-client";
 import type { TaskTracking } from "@/components/TaskStatusControl";
+import CalendarEventExport from "@/components/CalendarEventExport";
 
 type Reminder = { id: string; remind_at: string; message: string | null; is_due: boolean };
 type SyncEvent = { id: string; provider: "slack" | "google_calendar"; external_task_id: string | null; sync_status: string; created_at: string; demo_only: boolean };
@@ -42,7 +43,7 @@ export default function TaskActionsPanel({ task }: { task: TaskTracking }) {
     }
   }
 
-  async function demoAction(provider: "slack" | "google_calendar") {
+  async function demoAction(provider: "slack") {
     setBusy(provider);
     setError("");
     try {
@@ -68,8 +69,9 @@ export default function TaskActionsPanel({ task }: { task: TaskTracking }) {
         <button className="button" type="submit" disabled={busy !== ""}>{busy === "reminder" ? "Scheduling…" : "Schedule reminder"}</button>
       </form>
       {reminders.length > 0 && <div className="task-reminder-list"><h3>Scheduled for this task</h3>{reminders.map((reminder) => <p key={reminder.id}>{new Date(reminder.remind_at).toLocaleString()}{reminder.message ? ` · ${reminder.message}` : ""}</p>)}</div>}
-      <div className="demo-integration-block"><h3>Simulated integrations</h3><p className="form-note">Demo actions are recorded in MinuteMate only. They do not send a Slack message or create a real calendar event.</p><div className="review-actions"><button className="button secondary" type="button" disabled={busy !== ""} onClick={() => demoAction("slack")}>{busy === "slack" ? "Recording…" : "Simulate Slack action"}</button><button className="button secondary" type="button" disabled={busy !== ""} onClick={() => demoAction("google_calendar")}>{busy === "google_calendar" ? "Recording…" : "Simulate Calendar action"}</button></div></div>
-      {events.length > 0 && <div className="task-demo-history"><h3>Demo action history</h3>{events.map((item) => <p key={item.id}><strong>{item.provider === "slack" ? "Slack" : "Calendar"}</strong> · simulated · {new Date(item.created_at).toLocaleString()}</p>)}</div>}
+      <CalendarEventExport task={task} />
+      <div className="demo-integration-block"><h3>Slack demo simulation</h3><p className="form-note">Slack is not connected. This action only records a simulated event in MinuteMate and does not send a Slack message.</p><button className="button secondary" type="button" disabled={busy !== ""} onClick={() => demoAction("slack")}>{busy === "slack" ? "Recording…" : "Simulate Slack action"}</button></div>
+      {events.length > 0 && <div className="task-demo-history"><h3>Previous simulated action history</h3>{events.map((item) => <p key={item.id}><strong>{item.provider === "slack" ? "Slack" : "Legacy Calendar action"}</strong> · simulated · {new Date(item.created_at).toLocaleString()}</p>)}</div>}
     </>}
     {error && <p className="form-error" role="alert">{error}</p>}
   </section>;

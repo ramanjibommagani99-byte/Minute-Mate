@@ -16,8 +16,15 @@ venv/
 # Node / Next.js
 node_modules/
 .next/
+frontend/.next-minutemate/
 out/
 coverage/
+frontend/test-results/
+frontend/playwright-report/
+frontend/.playwright-results/
+frontend/.pw-artifacts/
+frontend/.pw-home-check/
+frontend/.next-validation/
 npm-debug.log*
 *.tsbuildinfo
 
@@ -27,3 +34,5 @@ npm-debug.log*
 .idea/
 Thumbs.db
 .DS_Store
+# Ignore all log files
+*.log

@@ -1,0 +1,34 @@
+[
+  {
+    "name": "relative_deadline_and_timestamp",
+    "meeting_date": "2026-11-19T10:00:00Z",
+    "source_text": "[00:45] Priya will send the launch checklist tomorrow.",
+    "tasks": 1,
+    "due_date": "2026-11-20",
+    "timestamp_seconds": 45
+  },
+  {
+    "name": "missing_owner_stays_unassigned",
+    "meeting_date": "2026-11-19T10:00:00Z",
+    "source_text": "We will publish the release notes by November 24th.",
+    "tasks": 1,
+    "due_date": "2026-11-24",
+    "timestamp_seconds": null
+  },
+  {
+    "name": "question_is_not_a_task",
+    "meeting_date": "2026-11-19T10:00:00Z",
+    "source_text": "Should we prepare a separate enterprise version?",
+    "tasks": 0,
+    "due_date": null,
+    "timestamp_seconds": null
+  },
+  {
+    "name": "general_update_is_not_a_task",
+    "meeting_date": "2026-11-19T10:00:00Z",
+    "source_text": "The team discussed last week's customer feedback.",
+    "tasks": 0,
+    "due_date": null,
+    "timestamp_seconds": null
+  }
+]

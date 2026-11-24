@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import AuthNav from "@/components/AuthNav";
+import AppShell from "@/components/AppShell";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,17 +11,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body>
-        <div className="shell">
-          <header className="topbar">
-            <Link className="brand" href="/">Minute<span>Mate</span></Link>
-            <nav className="nav" aria-label="Main navigation">
-              <Link href="/meetings/new">New meeting</Link>
-              <Link href="/dashboard">Dashboard</Link>
-              <AuthNav />
-            </nav>
-          </header>
-          {children}
-        </div>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

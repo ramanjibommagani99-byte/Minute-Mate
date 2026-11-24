@@ -29,7 +29,7 @@ function formFromTask(task: TaskReviewItem) {
   };
 }
 
-export default function TaskReviewCard({ task, onUpdate }: { task: TaskReviewItem; onUpdate: (task: TaskReviewItem) => void }) {
+export default function TaskReviewCard({ task, onUpdate, onEvidence }: { task: TaskReviewItem; onUpdate: (task: TaskReviewItem) => void; onEvidence?: (quote: string, confidence: number) => void }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busyAction, setBusyAction] = useState("");
@@ -106,7 +106,7 @@ export default function TaskReviewCard({ task, onUpdate }: { task: TaskReviewIte
     {!editing ? <>
       {task.description && <p>{task.description}</p>}
       <dl className="proposal-meta">{task.assignee_name && <div><dt>Suggested owner</dt><dd>{task.assignee_name}</dd></div>}{(task.due_date || task.due_date_original) && <div><dt>Due date</dt><dd>{task.due_date ?? task.due_date_original}</dd></div>}<div><dt>Model confidence</dt><dd>{Math.round(task.confidence_score * 100)}%</dd></div></dl>
-      {task.evidence.map((evidence) => <div key={evidence.id}><blockquote className="evidence-quote">“{evidence.quote_text}”</blockquote>{evidence.timestamp_seconds !== null && <p className="source-timestamp">Source timestamp: {formatTimestamp(evidence.timestamp_seconds)}</p>}</div>)}
+      {task.evidence.map((evidence) => <div key={evidence.id}><blockquote className="evidence-quote">“{evidence.quote_text}”</blockquote><button className="evidence-jump" type="button" onClick={() => onEvidence?.(evidence.quote_text, task.confidence_score)}>Show this sentence in transcript · {Math.round(task.confidence_score * 100)}% confidence →</button>{evidence.timestamp_seconds !== null && <p className="source-timestamp">Source timestamp: {formatTimestamp(evidence.timestamp_seconds)}</p>}</div>)}
       <div className="trust-checks" aria-label="Source trust checks">
         <TrustCheck label="Evidence quote" valid={task.trust.evidence_valid} />
         <TrustCheck label="Timestamp" valid={task.trust.timestamp_valid} />

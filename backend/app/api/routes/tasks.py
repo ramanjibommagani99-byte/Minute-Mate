@@ -3,7 +3,7 @@ from typing import Literal
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user
@@ -35,6 +35,7 @@ def tracking_response(task: Task, meeting: Meeting) -> TaskTrackingResponse:
         **proposal.model_dump(),
         meeting_id=meeting.id,
         meeting_title=meeting.title,
+        project_name=meeting.project_name,
         meeting_date=meeting.meeting_date,
     )
 
@@ -80,20 +81,36 @@ def ensure_reviewable(task: Task) -> None:
 
 @router.get("", response_model=list[TaskTrackingResponse])
 def list_tasks(
-    approval_status: Literal["pending", "approved", "needs_review", "rejected", "all"] | None = Query(default=None),
+    approval_status: Literal["pending", "approved", "needs_review", "review", "rejected", "all"] | None = Query(default=None),
     task_status: Literal["not_started", "in_progress", "completed", "overdue"] | None = Query(default=None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    assignee_name: str | None = None,
+    project_name: str | None = None,
+    due_date_from: date | None = None,
+    due_date_to: date | None = None,
 ) -> list[TaskTrackingResponse]:
+    if due_date_from and due_date_to and due_date_from > due_date_to:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="due_date_from must be on or before due_date_to")
     statement = select(Task, Meeting).join(Meeting, Meeting.id == Task.meeting_id).where(Meeting.owner_id == current_user.id)
     if approval_status == "all":
         pass
+    elif approval_status == "review":
+        statement = statement.where(Task.approval_status.in_(("pending", "needs_review")))
     elif approval_status is not None:
         statement = statement.where(Task.approval_status == approval_status)
     else:
         statement = statement.where(Task.approval_status.in_(("pending", "approved", "needs_review")))
     if task_status is not None:
         statement = statement.where(Task.status == task_status)
+    if assignee_name and assignee_name.strip():
+        statement = statement.where(func.lower(Task.assignee_name).contains(assignee_name.strip().casefold()))
+    if project_name and project_name.strip():
+        statement = statement.where(func.lower(Meeting.project_name).contains(project_name.strip().casefold()))
+    if due_date_from:
+        statement = statement.where(Task.due_date >= due_date_from)
+    if due_date_to:
+        statement = statement.where(Task.due_date <= due_date_to)
     rows = db.execute(
         statement.order_by(Task.due_date.asc().nullslast(), Task.created_at.desc())
     ).all()

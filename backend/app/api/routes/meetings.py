@@ -1,7 +1,6 @@
 from datetime import date
 from uuid import UUID
 
-import httpx
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
@@ -17,6 +16,7 @@ from app.models.open_question import OpenQuestion
 from app.models.task import Task
 from app.models.task_evidence import TaskEvidence
 from app.models.user import User
+from app.services.assemblyai import transcribe_audio as transcribe_with_assemblyai
 from app.schemas.extraction import (
     DecisionResponse,
     MeetingExtractionResponse,
@@ -24,7 +24,7 @@ from app.schemas.extraction import (
     RiskResponse,
     TaskProposalResponse,
 )
-from app.schemas.meetings import MeetingCreate, MeetingResponse
+from app.schemas.meetings import MeetingCarryOverResponse, MeetingCreate, MeetingResponse
 from app.services.extraction import extract_meeting
 from app.services.trust import LOW_CONFIDENCE_THRESHOLD, check_task_trust, serialize_task
 
@@ -42,6 +42,7 @@ def create_meeting(
     meeting = Meeting(
         owner_id=current_user.id,
         title=payload.title,
+        project_name=payload.project_name,
         meeting_date=payload.meeting_date,
         source_type=payload.source_type,
         source_text=payload.source_text,
@@ -63,6 +64,53 @@ def list_meetings(
         .order_by(Meeting.meeting_date.desc().nullslast(), Meeting.created_at.desc())
     )
     return list(db.scalars(statement).all())
+
+
+@router.get("/carry-over", response_model=MeetingCarryOverResponse)
+def get_meeting_carry_over(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> MeetingCarryOverResponse:
+    previous = db.scalar(
+        select(Meeting)
+        .where(Meeting.owner_id == current_user.id)
+        .order_by(Meeting.created_at.desc(), Meeting.id.desc())
+        .limit(1)
+    )
+    if previous is None:
+        return MeetingCarryOverResponse(meeting_id=None, meeting_title=None, open_questions=[], overdue_tasks=[])
+
+    questions = db.scalars(
+        select(OpenQuestion)
+        .where(OpenQuestion.meeting_id == previous.id)
+        .order_by(OpenQuestion.id)
+    ).all()
+    overdue_rows = db.execute(
+        select(Task, Meeting)
+        .join(Meeting, Meeting.id == Task.meeting_id)
+        .where(
+            Meeting.owner_id == current_user.id,
+            Task.meeting_id == previous.id,
+            Task.approval_status == "approved",
+            Task.status != "completed",
+            Task.due_date.is_not(None),
+            Task.due_date < date.today(),
+        )
+        .order_by(Task.due_date, Task.title)
+        .limit(20)
+    ).all()
+    return MeetingCarryOverResponse(
+        meeting_id=previous.id,
+        meeting_title=previous.title,
+        open_questions=[
+            {"id": item.id, "question_text": item.question_text, "evidence_quote": item.evidence_quote}
+            for item in questions
+        ],
+        overdue_tasks=[
+            {"id": task.id, "title": task.title, "due_date": task.due_date, "meeting_title": meeting.title}
+            for task, meeting in overdue_rows
+        ],
+    )
 
 
 @router.get("/{meeting_id}", response_model=MeetingResponse)
@@ -87,32 +135,14 @@ async def transcribe_audio(
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in SUPPORTED_AUDIO_TYPES:
         raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Unsupported audio format")
-    if not settings.openai_api_key:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Audio transcription is not configured. Set OPENAI_API_KEY in backend/.env.")
-
     audio = await file.read(MAX_AUDIO_BYTES + 1)
     if not audio:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The uploaded audio file is empty")
     if len(audio) > MAX_AUDIO_BYTES:
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Audio files must be 25 MB or smaller")
 
-    try:
-        async with httpx.AsyncClient(timeout=180.0) as client:
-            response = await client.post(
-                "https://api.openai.com/v1/audio/transcriptions",
-                headers={"Authorization": f"Bearer {settings.openai_api_key}"},
-                data={"model": settings.transcription_model},
-                files={"file": (file.filename or "meeting-audio", audio, file.content_type or "application/octet-stream")},
-            )
-        response.raise_for_status()
-        transcript = response.json().get("text", "").strip()
-        if not transcript:
-            raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="The transcription service returned no text")
-        return {"text": transcript}
-    except httpx.HTTPStatusError as exc:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="The transcription service could not process this audio") from exc
-    except httpx.RequestError as exc:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="The transcription service is unavailable") from exc
+    transcript = await transcribe_with_assemblyai(audio)
+    return {"text": transcript}
 
 
 def extraction_result(db: Session, meeting: Meeting) -> MeetingExtractionResponse:

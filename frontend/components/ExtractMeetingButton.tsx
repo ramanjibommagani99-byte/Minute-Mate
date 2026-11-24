@@ -23,7 +23,7 @@ export default function ExtractMeetingButton({ meetingId }: { meetingId: string 
 
   return <div className="extract-action">
     <button className="button" type="button" onClick={runExtraction} disabled={working}>{working ? "Extracting…" : "Extract meeting insights"}</button>
-    <p className="form-note">The source is sent to OpenAI for analysis. Results remain proposals until you review them.</p>
+    <p className="form-note">Extraction uses the backend’s configured provider: Ollama for local semantic extraction, or the rule-based fallback on hosted deployments. Check every evidence quote before approval; results remain proposals until you review them.</p>
     {error && <p className="form-error" role="alert">{error}</p>}
   </div>;
 }

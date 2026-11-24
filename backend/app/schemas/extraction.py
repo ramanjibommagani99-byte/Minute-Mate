@@ -172,6 +172,7 @@ class TaskStatusUpdateRequest(BaseModel):
 class TaskTrackingResponse(TaskProposalResponse):
     meeting_id: UUID
     meeting_title: str
+    project_name: str | None
     meeting_date: datetime | None
 
 
@@ -225,7 +226,7 @@ class TaskSyncEventResponse(BaseModel):
 
 
 def extraction_schema() -> dict[str, Any]:
-    """Strict JSON Schema sent to the Responses API (all keys are required)."""
+    """Strict JSON Schema for the meeting extraction response (all keys are required)."""
     def nullable_string() -> dict[str, Any]:
         return {"type": ["string", "null"]}
 

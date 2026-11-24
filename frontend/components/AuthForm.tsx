@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import { API_URL } from "@/lib/api-client";
@@ -9,15 +8,17 @@ import { API_URL } from "@/lib/api-client";
 type AuthFormProps = { mode: "login" | "register" };
 
 export default function AuthForm({ mode }: AuthFormProps) {
-  const router = useRouter();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isRegister = mode === "register";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setSuccess("");
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     const form = event.currentTarget;
     const formData = new FormData(form);
     const payload: Record<string, string> = {
@@ -43,10 +44,11 @@ export default function AuthForm({ mode }: AuthFormProps) {
         form.reset();
         return;
       }
-      router.replace("/dashboard");
-      router.refresh();
+      window.location.assign("/dashboard");
     } catch {
       setError("MinuteMate could not reach the API. Check that the backend is running.");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -63,7 +65,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
         <label className="field">Password<input autoComplete={isRegister ? "new-password" : "current-password"} name="password" type="password" required minLength={isRegister ? 10 : 1} maxLength={72} /></label>
         {error && <p className="form-error" role="alert">{error}</p>}
         {success && <p className="form-success" role="status">{success} <Link className="auth-link" href="/login">Sign in</Link></p>}
-        <button className="button" type="submit">{isRegister ? "Create account" : "Sign in"}</button>
+        <button className="button" type="submit" disabled={isSubmitting}>{isSubmitting ? (isRegister ? "Creating account…" : "Signing in…") : (isRegister ? "Create account" : "Sign in")}</button>
+        {isSubmitting && <p className="form-note" role="status">Connecting securely to MinuteMate…</p>}
       </form>
       <p className="form-note" style={{ marginTop: 20 }}>
         {isRegister ? <>Already registered? <Link className="auth-link" href="/login">Sign in</Link></> : <>New to MinuteMate? <Link className="auth-link" href="/register">Create an account</Link></>}

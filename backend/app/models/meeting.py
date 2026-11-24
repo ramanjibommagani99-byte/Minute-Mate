@@ -20,6 +20,7 @@ class Meeting(TimestampMixin, Base):
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     owner_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
+    project_name: Mapped[str | None] = mapped_column(String(120))
     meeting_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     source_type: Mapped[str] = mapped_column(String(20), nullable=False)
     source_text: Mapped[str] = mapped_column(Text, nullable=False)

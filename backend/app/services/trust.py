@@ -61,6 +61,23 @@ def timestamp_matches_source(source_text: str, quote: str, timestamp_seconds: in
     return False
 
 
+def timestamp_for_quote(source_text: str, quote: str) -> int | None:
+    """Return a source timestamp only when every exact quote occurrence agrees."""
+    markers = timestamp_markers(source_text)
+    occurrences = _quote_matches(source_text, quote)
+    if not markers or not occurrences:
+        return None
+    values: set[int] = set()
+    for occurrence in occurrences:
+        paragraph_boundary = source_text.rfind("\n\n", 0, occurrence.start())
+        section_start = 0 if paragraph_boundary < 0 else paragraph_boundary + 2
+        preceding = [marker for marker in markers if section_start <= marker[0] < occurrence.start()]
+        if not preceding:
+            return None
+        values.add(preceding[-1][1])
+    return values.pop() if len(values) == 1 else None
+
+
 @dataclass(frozen=True)
 class TaskTrust:
     evidence_valid: bool
