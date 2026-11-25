@@ -21,13 +21,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth_router, prefix="/auth", tags=["authentication"])
-app.include_router(meetings_router, prefix="/meetings", tags=["meetings"])
-app.include_router(tasks_router, prefix="/tasks", tags=["tasks"])
-app.include_router(reminders_router, prefix="", tags=["reminders"])
+for api_prefix in ("", "/api"):
+    # Local Next.js rewrites strip /api before forwarding, while Vercel
+    # Services forwards the original path. Register both forms so the API
+    # works in either deployment path.
+    include_in_schema = api_prefix == ""
+    app.include_router(
+        auth_router,
+        prefix=f"{api_prefix}/auth",
+        tags=["authentication"],
+        include_in_schema=include_in_schema,
+    )
+    app.include_router(
+        meetings_router,
+        prefix=f"{api_prefix}/meetings",
+        tags=["meetings"],
+        include_in_schema=include_in_schema,
+    )
+    app.include_router(
+        tasks_router,
+        prefix=f"{api_prefix}/tasks",
+        tags=["tasks"],
+        include_in_schema=include_in_schema,
+    )
+    app.include_router(
+        reminders_router,
+        prefix=api_prefix,
+        tags=["reminders"],
+        include_in_schema=include_in_schema,
+    )
 
 
 @app.get("/health", tags=["system"])
+@app.get("/api/health", tags=["system"], include_in_schema=False)
 def health() -> dict[str, str]:
     """Report that the API process is ready to receive requests."""
     return {"status": "ok", "service": "minutemate-api"}
