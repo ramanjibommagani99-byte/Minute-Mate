@@ -7,6 +7,42 @@ import { API_URL } from "@/lib/api-client";
 
 type AuthFormProps = { mode: "login" | "register" };
 
+type ApiErrorBody = {
+  detail?: unknown;
+};
+
+function getRequestError(body: ApiErrorBody, status: number): string {
+  if (typeof body.detail === "string" && body.detail.trim()) {
+    return body.detail;
+  }
+
+  if (Array.isArray(body.detail)) {
+    const messages = body.detail.flatMap((issue) => {
+      if (!issue || typeof issue !== "object") return [];
+      const item = issue as { loc?: unknown; msg?: unknown };
+      if (typeof item.msg !== "string") return [];
+
+      const location = Array.isArray(item.loc) ? item.loc : [];
+      const field = location
+        .filter((part): part is string => typeof part === "string" && part !== "body")
+        .map((part) => part.replaceAll("_", " "))
+        .join(" ");
+      const label = field ? `${field.charAt(0).toUpperCase()}${field.slice(1)}: ` : "";
+      return [`${label}${item.msg}`];
+    });
+
+    if (messages.length) return messages.join(" ");
+  }
+
+  if (status >= 500) {
+    return "MinuteMate’s server could not complete this request. Please try again; if it continues, check the Vercel Runtime Logs.";
+  }
+  if (status === 404 || status === 502 || status === 503) {
+    return "MinuteMate could not reach the account service. Please try again shortly.";
+  }
+  return "The request was rejected. Check your name, email, and password, then try again.";
+}
+
 export default function AuthForm({ mode }: AuthFormProps) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -34,9 +70,12 @@ export default function AuthForm({ mode }: AuthFormProps) {
         credentials: "include",
         body: JSON.stringify(payload),
       });
-      const result = await response.json().catch(() => ({}));
+      const responseBody: unknown = await response.json().catch(() => null);
+      const result = responseBody && typeof responseBody === "object"
+        ? responseBody as ApiErrorBody
+        : {};
       if (!response.ok) {
-        setError(typeof result.detail === "string" ? result.detail : "Unable to complete this request. Please check your details.");
+        setError(getRequestError(result, response.status));
         return;
       }
       if (isRegister) {
