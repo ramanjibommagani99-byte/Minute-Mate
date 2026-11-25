@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   // separate directory to avoid stale .next files held by OneDrive sync.
   distDir: process.env.VERCEL === "1" ? ".next" : ".next-minutemate",
   async rewrites() {
+    // On Vercel, the repository-level Services routing sends /api to FastAPI.
+    // Keep this local proxy for development only; localhost is not the backend
+    // inside a hosted frontend deployment.
+    if (process.env.VERCEL === "1") return [];
     return [{ source: "/api/:path*", destination: `${backendOrigin}/:path*` }];
   },
 };
